@@ -1,0 +1,350 @@
+/* Donor (red) theme overrides */
+.donor-dashboard .welcome-banner-donor {
+  background: linear-gradient(135deg,#fff4f4 0%, #ffecec 100%);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.donor-dashboard .banner-text h2 { color: #a81b1b }
+.donor-dashboard .banner-text p { color: #7a2d2d }
+
+.donor-dashboard .card-header-large {
+  background: linear-gradient(135deg,#ff5a5a,#d93a3a);
+  color: #fff;
+}
+
+.donor-dashboard .sidebar-nav .nav-item.active {
+  background: linear-gradient(135deg,#ff5a5a,#d93a3a);
+  color: #fff;
+  border-left: none;
+  border-radius: 10px;
+}
+
+.donor-dashboard .stat-icon { color: #c62828 }
+
+/* ─ Certificates Preview (on profile card) ─ */
+.cert-preview {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #ffe0e0;
+}
+
+.cert-preview-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #a81b1b;
+  margin-bottom: 0.5rem;
+}
+
+.cert-preview-count {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+}
+
+/* ─ Certificates Grid ─ */
+.certificates-card {
+  padding: 0;
+}
+
+.certificates-grid {
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  position: relative;
+}
+
+.cert-count-badge {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  display: inline-block;
+  background: linear-gradient(135deg, #c41e3a, #e74c3c);
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(196, 30, 58, 0.3);
+}
+
+/* ─ Individual Certificate Item ─ */
+.certificate-item {
+  background: linear-gradient(135deg, #fff5f5, #ffe0e0);
+  border: 2px solid #f5c2c2;
+  border-radius: 14px;
+  padding: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.certificate-item::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #c41e3a, #e74c3c, #f39c12);
+}
+
+.certificate-item:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 30px rgba(196, 30, 58, 0.2);
+  border-color: #e47070;
+}
+
+.cert-header {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.cert-icon {
+  font-size: 2.5rem;
+  min-width: 60px;
+  text-align: center;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+.cert-info {
+  flex: 1;
+}
+
+.cert-info h4 {
+  margin: 0;
+  color: #c41e3a;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.cert-donor {
+  margin: 0.3rem 0 0 0;
+  color: #333;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.cert-date {
+  margin: 0.2rem 0 0 0;
+  color: #777;
+  font-size: 0.85rem;
+}
+
+.cert-details {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 1rem;
+  background: rgba(196, 30, 58, 0.05);
+  border-radius: 10px;
+}
+
+.cert-blood-badge {
+  background: linear-gradient(135deg, #c41e3a, #e74c3c);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.cert-hospital {
+  color: #666;
+  font-size: 0.85rem;
+  flex: 1;
+  text-align: right;
+}
+
+.btn-download-cert {
+  background: linear-gradient(135deg, #c41e3a, #a01820);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  width: 100%;
+}
+
+.btn-download-cert:hover {
+  background: linear-gradient(135deg, #a01820, #7a1318);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(196, 30, 58, 0.35);
+}
+
+.btn-download-cert:active {
+  transform: translateY(-1px);
+}
+
+/* ─ Responsive ─ */
+@media (max-width: 768px) {
+  .certificates-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cert-count-badge {
+    position: static;
+    margin-bottom: 1rem;
+  }
+}
+
+/* ── Map Card ── */
+.map-card {
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.map-card .hospitals-map-container {
+  padding: 1.5rem;
+}
+
+.map-card .map-wrapper {
+  height: 600px;
+}
+
+@media (max-width: 1024px) {
+  .map-card .map-wrapper {
+    min-height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .map-card .hospitals-map-container {
+    padding: 1rem;
+  }
+}
+
+/* ─ Countdown Timer Styles ─ */
+.countdown-timer {
+  background: linear-gradient(135deg, #fff3cd, #ffe8b6);
+  border: 2px solid #ffc107;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.countdown-label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #856404;
+  margin: 0 0 1rem 0;
+}
+
+.countdown-display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.time-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: white;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  min-width: 60px;
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+}
+
+.time-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #c41e3a;
+  line-height: 1;
+}
+
+.time-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #666;
+  margin-top: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.time-separator {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #c41e3a;
+  margin: 0 0.25rem;
+}
+
+/* ─ Locked Message ─ */
+.locked-message {
+  background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+  border: 2px solid #f5c2c2;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.lock-icon {
+  font-size: 3rem;
+  margin: 0 0 1rem 0;
+  display: block;
+}
+
+.lock-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #a81b1b;
+  margin: 0 0 0.5rem 0;
+}
+
+.lock-subtext {
+  font-size: 0.95rem;
+  color: #7a2d2d;
+  margin: 0;
+}
+
+/* ─ Locked Button Styles ─ */
+.availability-btn.locked {
+  background: linear-gradient(135deg, #cccccc, #999999);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.availability-btn.locked:hover {
+  background: linear-gradient(135deg, #cccccc, #999999);
+  transform: none;
+  box-shadow: none;
+}
+
+.availability-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-accept:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

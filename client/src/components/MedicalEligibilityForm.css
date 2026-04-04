@@ -1,0 +1,376 @@
+/* ═══════════════════════════════════════════════════════════
+   Medical Eligibility Form Styles
+   ═══════════════════════════════════════════════════════════ */
+
+.medical-form-container {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  animation: fadeInUp 0.4s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Header ── */
+.medical-form-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.medical-form-header h3 {
+  font-size: 1.4rem;
+  color: #c62828;
+  margin-bottom: 0.4rem;
+}
+
+.medical-form-header p {
+  font-size: 0.88rem;
+  color: #777;
+  line-height: 1.5;
+}
+
+/* ── Form Sections ── */
+.medical-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+
+.form-section {
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-section:focus-within {
+  border-color: #ef5350;
+  box-shadow: 0 0 0 3px rgba(239, 83, 80, 0.08);
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.label-icon {
+  font-size: 1.1rem;
+}
+
+.required {
+  color: #ef5350;
+  font-weight: 700;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.92rem;
+  color: #333;
+  background: #fff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #ef5350;
+  box-shadow: 0 0 0 3px rgba(239, 83, 80, 0.1);
+}
+
+.form-input::placeholder {
+  color: #aaa;
+}
+
+.conditional-input {
+  margin-top: 0.6rem;
+  border-color: #ffcdd2;
+  background: #fff5f5;
+}
+
+.form-hint {
+  display: block;
+  font-size: 0.78rem;
+  color: #999;
+  margin-top: 0.3rem;
+}
+
+/* ── Disease Grid (Checkbox chips) ── */
+.disease-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.disease-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.8rem;
+  border: 1.5px solid #ddd;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  color: #555;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.disease-chip input[type="checkbox"] {
+  display: none;
+}
+
+.disease-chip:hover {
+  border-color: #ef9a9a;
+  background: #fff5f5;
+}
+
+.disease-chip.selected {
+  border-color: #ef5350;
+  background: #ffebee;
+  color: #c62828;
+  font-weight: 600;
+}
+
+/* ── Radio Group ── */
+.radio-group {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.radio-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 1.2rem;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.radio-option input[type="radio"] {
+  display: none;
+}
+
+.radio-option:hover {
+  border-color: #ef9a9a;
+  background: #fff5f5;
+}
+
+.radio-option.selected {
+  border-color: #ef5350;
+  background: #ffebee;
+  color: #c62828;
+  font-weight: 600;
+}
+
+/* ── Action Buttons ── */
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.btn-back {
+  padding: 0.7rem 1.4rem;
+  border: 1.5px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+  color: #666;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-back:hover {
+  border-color: #bbb;
+  background: #f5f5f5;
+}
+
+.btn-check-eligibility {
+  padding: 0.7rem 1.8rem;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ef5350, #c62828);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 3px 10px rgba(198, 40, 40, 0.25);
+}
+
+.btn-check-eligibility:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(198, 40, 40, 0.35);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Result Screen
+   ═══════════════════════════════════════════════════════════ */
+
+.eligibility-result {
+  text-align: center;
+  padding: 2rem 1.5rem;
+  border-radius: 16px;
+  animation: fadeInUp 0.4s ease;
+}
+
+.eligibility-result.eligible {
+  background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+  border: 2px solid #66bb6a;
+}
+
+.eligibility-result.ineligible {
+  background: linear-gradient(135deg, #ffebee, #ffcdd2);
+  border: 2px solid #ef5350;
+}
+
+.result-icon {
+  font-size: 3.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.result-title {
+  font-size: 1.3rem;
+  margin-bottom: 0.75rem;
+}
+
+.eligible .result-title {
+  color: #2e7d32;
+}
+
+.ineligible .result-title {
+  color: #c62828;
+}
+
+.result-message {
+  font-size: 0.92rem;
+  color: #555;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.result-reasons {
+  text-align: left;
+}
+
+.reasons-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem 0;
+}
+
+.reasons-list li {
+  position: relative;
+  padding: 0.6rem 0.8rem 0.6rem 1.6rem;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: #b71c1c;
+  line-height: 1.5;
+}
+
+.reasons-list li::before {
+  content: "⚠️";
+  position: absolute;
+  left: 0.4rem;
+  top: 0.6rem;
+}
+
+.result-note {
+  font-size: 0.85rem;
+  color: #777;
+  font-style: italic;
+  margin-top: 0.75rem;
+  padding: 0.6rem;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+}
+
+.result-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-proceed {
+  padding: 0.75rem 2rem;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #43a047, #2e7d32);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 3px 10px rgba(46, 125, 50, 0.3);
+}
+
+.btn-proceed:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 16px rgba(46, 125, 50, 0.4);
+}
+
+/* ── Responsive ── */
+@media (max-width: 500px) {
+  .medical-form-container {
+    padding: 0 0.5rem;
+  }
+
+  .form-section {
+    padding: 0.8rem 1rem;
+  }
+
+  .disease-grid {
+    gap: 0.4rem;
+  }
+
+  .disease-chip {
+    font-size: 0.78rem;
+    padding: 0.35rem 0.65rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-check-eligibility,
+  .btn-back {
+    width: 100%;
+    text-align: center;
+  }
+
+  .result-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

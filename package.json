@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "canvas": "^3.2.3",
+    "firebase": "^12.9.0",
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^5.0.0"
+  }
+}

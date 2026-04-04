@@ -1,0 +1,148 @@
+/* Admin (blue) theme overrides */
+.admin-dashboard .welcome-banner-admin {
+  background: linear-gradient(135deg,#e8f3ff 0%, #eaf6ff 100%);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.admin-dashboard .banner-text h2 { color: #0b5fa8 }
+.admin-dashboard .banner-text p { color: #3b6f9a }
+
+.admin-dashboard .card-header-large {
+  background: linear-gradient(135deg,#2b8cff,#1a6fe0);
+  color: #fff;
+}
+
+.admin-dashboard .sidebar-nav .nav-item.active {
+  background: linear-gradient(135deg,#2b8cff,#1a6fe0);
+  color: #fff;
+  border-left: none;
+  border-radius: 10px;
+}
+
+.admin-dashboard .stat-icon { color: #1a6fe0 }
+
+/* Pending user rows */
+.pending-user-row {
+  padding: 0.8rem 0;
+  border-bottom: 1px dashed #eef2f7;
+}
+
+.pending-user-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Expand arrow button */
+.expand-arrow {
+  background: none;
+  border: 1px solid #dde4ed;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  color: #1a6fe0;
+  padding: 4px 6px;
+  transition: transform 0.25s ease, background 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expand-arrow:hover {
+  background: #e8f3ff;
+}
+
+.expand-arrow.expanded {
+  transform: rotate(90deg);
+}
+
+/* Dropdown details panel */
+.user-details-dropdown {
+  background: #f5f9ff;
+  border: 1px solid #dde4ed;
+  border-radius: 8px;
+  margin-top: 0.6rem;
+  padding: 1rem;
+  animation: slideDown 0.25s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+  }
+}
+
+.user-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detail-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #7b8a9a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value {
+  font-size: 0.92rem;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
+/* Aadhaar verify button */
+.aadhaar-value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.aadhaar-btn {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+button.aadhaar-verify {
+  background: #1a6fe0;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+button.aadhaar-verify:hover {
+  background: #155bb5;
+}
+
+.aadhaar-valid {
+  background: #e6f9ee;
+  color: #1a8a4a;
+  border: 1px solid #b2e5c8;
+}
+
+.aadhaar-invalid {
+  background: #fdecea;
+  color: #c0392b;
+  border: 1px solid #f5c6cb;
+}
