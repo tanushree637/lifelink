@@ -21,3 +21,8 @@ node_modules/
 build/
 dist/
 .firebase/
+
+# Firebase credentials - NEVER commit these
+server/config/*.json
+!server/config/firebase.js
+*-firebase-adminsdk-*.json
