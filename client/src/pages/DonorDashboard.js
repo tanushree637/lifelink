@@ -52,6 +52,19 @@ const DonorDashboard = () => {
     }
   };
 
+  // Define handleAutoMarkAvailable before updateCountdown
+  const handleAutoMarkAvailable = async () => {
+    try {
+      console.log("Auto-marking donor as available after waiting period");
+      await donorAPI.updateAvailability(true);
+      setAvailable(true);
+      setIsLocked(false);
+      setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+    } catch (error) {
+      console.error("Error auto-marking as available:", error);
+    }
+  };
+
   // Calculate countdown timer
   const updateCountdown = (targetDate) => {
     // Validate target date
@@ -95,18 +108,6 @@ const DonorDashboard = () => {
     setIsLocked(true);
   };
 
-  const handleAutoMarkAvailable = async () => {
-    try {
-      console.log("Auto-marking donor as available after waiting period");
-      await donorAPI.updateAvailability(true);
-      setAvailable(true);
-      setIsLocked(false);
-      setCountdown({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-    } catch (error) {
-      console.error("Error auto-marking as available:", error);
-    }
-  };
-
   const handleViewHistory = async () => {
     setLoading(true);
     try {
@@ -121,11 +122,16 @@ const DonorDashboard = () => {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    fetchProfile();
-    handleViewRequests();
-    handleViewHistory();
-    fetchCertificates();
+    // Initialize profile data on component mount
+    // These functions are defined below and called in sequence
+    (async () => {
+      await fetchProfile();
+      await handleViewRequests();
+      await handleViewHistory();
+      await fetchCertificates();
+    })();
   }, []);
 
   const fetchCertificates = async () => {

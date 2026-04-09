@@ -1,0 +1,11 @@
+{
+  "services": {
+    "web": {
+      "buildCommand": "cd server && npm install",
+      "startCommand": "cd server && node server.js",
+      "variables": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}

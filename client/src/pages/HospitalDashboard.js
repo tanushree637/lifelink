@@ -68,7 +68,10 @@ const HospitalDashboard = () => {
   };
 
   useEffect(() => {
-    fetchProfile();
+    const loadProfile = async () => {
+      await fetchProfile();
+    };
+    loadProfile();
   }, []);
 
   const handleViewPendingDonations = async () => {

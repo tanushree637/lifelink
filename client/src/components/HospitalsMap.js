@@ -91,7 +91,7 @@ function ZoomToHospital({ hospital }) {
     } catch (err) {
       console.error("Error zooming to hospital:", err);
     }
-  }, [hospital?.id, map]);
+  }, [hospital, map]);
 
   return null;
 }
@@ -180,7 +180,7 @@ const HospitalsMap = ({
         );
       }
     }
-  }, [hospitalsList.length]); // Use length instead of entire array
+  }, [hospitalsList, hasFetched]);
 
   // Process emergency requests with hospital information from props
   useEffect(() => {
@@ -211,7 +211,7 @@ const HospitalsMap = ({
       console.log("ℹ️ No requests or hospitals to process");
       setRequestsWithHospitalInfo([]);
     }
-  }, [emergencyRequests.length, hospitals.length]); // Use length instead of entire arrays
+  }, [emergencyRequests, hospitals]); // Include full arrays for proper dependency tracking
   // Update showEmergencyRequests when requests change
   useEffect(() => {
     if (requestsWithHospitalInfo.length > 0) {
