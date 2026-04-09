@@ -1,6 +1,7 @@
 # LifeLink Deployment Guide
 
 ## Deployment Architecture
+
 - **Frontend**: Vercel (React)
 - **Backend**: Railway (Node.js/Express)
 - **Database**: Firebase Firestore (unchanged)
@@ -8,6 +9,7 @@
 ## Prerequisites
 
 Before deploying, ensure you have:
+
 1. GitHub account with your repository pushed
 2. Vercel account (https://vercel.com)
 3. Railway account (https://railway.app)
@@ -18,6 +20,7 @@ Before deploying, ensure you have:
 ## Step 1: Deploy Backend to Railway
 
 ### 1.1 Create Railway Account & Project
+
 1. Go to https://railway.app and sign up
 2. Create a new project
 3. Connect your GitHub repository
@@ -41,6 +44,7 @@ FRONTEND_URL=https://your-app-name.vercel.app
 ```
 
 ### 1.3 Configure Build & Start Commands
+
 1. In Railway dashboard, go to **Deployments**
 2. Click **Settings**
 3. Set:
@@ -48,6 +52,7 @@ FRONTEND_URL=https://your-app-name.vercel.app
    - **Start Command**: `cd server && npm start`
 
 ### 1.4 Deploy
+
 - Railway automatically deploys when you push to your GitHub repository
 - Get your Railway domain from the deployment URL (e.g., `https://lifelink-backend.railway.app`)
 
@@ -56,11 +61,13 @@ FRONTEND_URL=https://your-app-name.vercel.app
 ## Step 2: Deploy Frontend to Vercel
 
 ### 2.1 Connect GitHub to Vercel
+
 1. Go to https://vercel.com and sign in
 2. Click "Import Project"
 3. Select your GitHub repository
 
 ### 2.2 Configure Build Settings
+
 1. **Root Directory**: Select `client`
 2. **Framework**: React
 3. **Build Command**: `npm run build`
@@ -68,6 +75,7 @@ FRONTEND_URL=https://your-app-name.vercel.app
 5. **Output Directory**: `build`
 
 ### 2.3 Add Environment Variables
+
 In Vercel dashboard, go to **Settings** → **Environment Variables** and add:
 
 ```
@@ -81,6 +89,7 @@ REACT_APP_FIREBASE_APP_ID=your-app-id
 ```
 
 ### 2.4 Deploy
+
 - Click **Deploy**
 - Vercel will automatically redeploy on GitHub pushes
 
@@ -103,7 +112,8 @@ This is already configured in `server/server.js` to dynamically use this variabl
 Ensure your client is using the environment variable. Check [client/src/utils/api.js](../client/src/utils/api.js):
 
 ```javascript
-const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api';
+const baseURL =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
 ```
 
 ---
@@ -111,16 +121,19 @@ const baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000/api
 ## Troubleshooting
 
 ### Backend Issues
+
 - **Port conflict**: Railway automatically assigns a port; don't hardcode 5000
 - **Firebase connection**: Verify private key formatting (should have literal `\n` not newlines)
 - **CORS errors**: Ensure `FRONTEND_URL` in Railway matches your Vercel domain
 
 ### Frontend Issues
+
 - **API not connecting**: Check that `REACT_APP_API_BASE_URL` is correct in Vercel
 - **Firebase auth failing**: Verify Firebase SDK configuration in environment variables
 - **Build errors**: Ensure all dependencies are in `client/package.json`
 
 ### Firebase Issues
+
 - Use Firebase Admin SDK for backend (already in `server/package.json`)
 - Ensure service account JSON is safely stored as environment variables, not committed to repo
 
