@@ -1,7 +1,6 @@
 {
   "buildCommand": "npm install --legacy-peer-deps && npm run build",
   "outputDirectory": "build",
-  "nodejs": "18.x",
   "env": {
     "SKIP_PREFLIGHT_CHECK": "true",
     "GENERATE_SOURCEMAP": "false",
