@@ -1,0 +1,15 @@
+{
+  "buildCommand": "cd client && npm install --legacy-peer-deps && npm run build",
+  "outputDirectory": "client/build",
+  "env": {
+    "SKIP_PREFLIGHT_CHECK": "true",
+    "GENERATE_SOURCEMAP": "false",
+    "CI": "false"
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
