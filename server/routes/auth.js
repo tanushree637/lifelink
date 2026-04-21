@@ -89,10 +89,10 @@ router.post("/register", async (req, res) => {
       }
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Store password as plain text for visibility (development)
     const newUser = {
       email,
-      password: hashedPassword,
+      password: password,
       name,
       role,
       phone,
@@ -180,19 +180,26 @@ router.post("/login", async (req, res) => {
     const userDoc = userSnapshot.docs[0];
     const user = userDoc.data();
 
-    if (user.status !== "approved") {
+    // Allow login for both approved and pending users (development mode)
+    // In production, enforce approval status if needed
+    if (process.env.NODE_ENV === "production" && user.status !== "approved") {
       return res.status(403).json({ message: "User not approved by admin" });
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    // Try direct password comparison first (new users with plain text)
+    let isPasswordValid = password === user.password;
+
+    // If not valid, try bcrypt comparison for old hashed passwords
+    if (!isPasswordValid && user.password.startsWith("$2")) {
+      try {
+        isPasswordValid = await bcrypt.compare(password, user.password);
+      } catch (err) {
+        isPasswordValid = false;
+      }
+    }
 
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    // Allow pending users to log in for development; in production, check approval status
-    if (process.env.NODE_ENV === "production" && user.status !== "approved") {
-      return res.status(403).json({ message: "User not approved by admin" });
     }
 
     const token = jwt.sign(
@@ -212,6 +219,56 @@ router.post("/login", async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Login failed", error: error.message });
+  }
+});
+
+// Migrate password to plain text (for users with hashed passwords)
+router.post("/migrate-password", async (req, res) => {
+  try {
+    const { email, password, newPassword } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password required" });
+    }
+
+    const db = getDB();
+    const userRef = db.collection("users");
+    const userSnapshot = await userRef.where("email", "==", email).get();
+
+    if (userSnapshot.empty) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const userDoc = userSnapshot.docs[0];
+    const user = userDoc.data();
+
+    // Verify old password
+    let isPasswordValid = password === user.password;
+
+    if (!isPasswordValid && user.password.startsWith("$2")) {
+      try {
+        isPasswordValid = await bcrypt.compare(password, user.password);
+      } catch (err) {
+        isPasswordValid = false;
+      }
+    }
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid password" });
+    }
+
+    // Update to plain text password
+    const plainPassword = newPassword || password;
+    await userRef.doc(userDoc.id).update({
+      password: plainPassword,
+    });
+
+    res.json({
+      message: "Password migrated to plain text successfully",
+      password: plainPassword,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Migration failed", error: error.message });
   }
 });
 

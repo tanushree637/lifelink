@@ -33,27 +33,33 @@ const createDefaultAdmin = async () => {
     const adminRef = db.collection("users");
     const snapshot = await adminRef.where("role", "==", "admin").get();
 
+    const adminData = {
+      email: "admin@lifelink.com",
+      password: "admin123",
+      name: "Super Admin",
+      role: "admin",
+      phone: "0000000000",
+      status: "approved",
+      createdAt: new Date(),
+    };
+
     if (snapshot.empty) {
-      const hashedPassword = await bcrypt.hash("admin123", 10);
-
-      await adminRef.add({
-        email: "admin@lifelink.com",
-        password: hashedPassword,
-        name: "Super Admin",
-        role: "admin",
-        phone: "0000000000",
-        status: "approved",
-        createdAt: new Date(),
-      });
-
+      await adminRef.add(adminData);
       console.log("✅ Default admin created");
       console.log("📧 Email: admin@lifelink.com");
       console.log("🔑 Password: admin123");
     } else {
-      console.log("Admin already exists");
+      // Update existing admin with plain text password
+      const adminDoc = snapshot.docs[0];
+      await adminRef.doc(adminDoc.id).update({
+        password: "admin123",
+      });
+      console.log("✅ Admin password updated to plain text");
+      console.log("📧 Email: admin@lifelink.com");
+      console.log("🔑 Password: admin123");
     }
   } catch (error) {
-    console.error("Error creating default admin:", error);
+    console.error("Error creating/updating default admin:", error);
   }
 };
 

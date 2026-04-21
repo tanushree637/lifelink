@@ -1,6 +1,7 @@
 /**
  * Mock Data for LifeLink Testing
  * Contains 5 donors, 5 recipients, and 5 hospitals
+ * Passwords are now stored as plain text (visible in Firestore)
  */
 
 const mockData = {
@@ -10,7 +11,7 @@ const mockData = {
   hospitals: [
     {
       email: "city-general@hospital.com",
-      password: "hashedPassword123", // Will be hashed before storage
+      password: "HospitalPass123",
       name: "City General Hospital",
       role: "hospital",
       phone: "+91-9876543210",
@@ -24,7 +25,7 @@ const mockData = {
     },
     {
       email: "apollo-hospital@hospital.com",
-      password: "hashedPassword123",
+      password: "HospitalPass123",
       name: "Apollo Hospital",
       role: "hospital",
       phone: "+91-9876543211",
@@ -38,7 +39,7 @@ const mockData = {
     },
     {
       email: "fortis-healthcare@hospital.com",
-      password: "hashedPassword123",
+      password: "HospitalPass123",
       name: "Fortis Healthcare",
       role: "hospital",
       phone: "+91-9876543212",
@@ -52,7 +53,7 @@ const mockData = {
     },
     {
       email: "max-hospital@hospital.com",
-      password: "hashedPassword123",
+      password: "HospitalPass123",
       name: "Max Hospital",
       role: "hospital",
       phone: "+91-9876543213",
@@ -66,7 +67,7 @@ const mockData = {
     },
     {
       email: "sunrise-hospital@hospital.com",
-      password: "hashedPassword123",
+      password: "HospitalPass123",
       name: "Sunrise Medical Hospital",
       role: "hospital",
       phone: "+91-9876543214",
@@ -86,7 +87,7 @@ const mockData = {
   donors: [
     {
       email: "rajesh.kumar@email.com",
-      password: "hashedPassword123",
+      password: "DonorPass123",
       name: "Rajesh Kumar",
       role: "donor",
       phone: "+91-9876543220",
@@ -122,7 +123,7 @@ const mockData = {
     },
     {
       email: "priya.sharma@email.com",
-      password: "hashedPassword123",
+      password: "DonorPass123",
       name: "Priya Sharma",
       role: "donor",
       phone: "+91-9876543221",
@@ -164,7 +165,7 @@ const mockData = {
     },
     {
       email: "amit.singh@email.com",
-      password: "hashedPassword123",
+      password: "DonorPass123",
       name: "Amit Singh",
       role: "donor",
       phone: "+91-9876543222",
@@ -201,7 +202,7 @@ const mockData = {
     },
     {
       email: "deepika.nair@email.com",
-      password: "hashedPassword123",
+      password: "DonorPass123",
       name: "Deepika Nair",
       role: "donor",
       phone: "+91-9876543223",
@@ -237,7 +238,7 @@ const mockData = {
     },
     {
       email: "vikram.patel@email.com",
-      password: "hashedPassword123",
+      password: "DonorPass123",
       name: "Vikram Patel",
       role: "donor",
       phone: "+91-9876543224",
@@ -272,7 +273,7 @@ const mockData = {
   recipients: [
     {
       email: "anuj.mishra@email.com",
-      password: "hashedPassword123",
+      password: "RecipientPass123",
       name: "Anuj Mishra",
       role: "recipient",
       phone: "+91-9876543230",
@@ -286,7 +287,7 @@ const mockData = {
     },
     {
       email: "neha.dwivedi@email.com",
-      password: "hashedPassword123",
+      password: "RecipientPass123",
       name: "Neha Dwivedi",
       role: "recipient",
       phone: "+91-9876543231",
@@ -300,7 +301,7 @@ const mockData = {
     },
     {
       email: "raman.joshi@email.com",
-      password: "hashedPassword123",
+      password: "RecipientPass123",
       name: "Raman Joshi",
       role: "recipient",
       phone: "+91-9876543232",
@@ -314,7 +315,7 @@ const mockData = {
     },
     {
       email: "sneha.verma@email.com",
-      password: "hashedPassword123",
+      password: "RecipientPass123",
       name: "Sneha Verma",
       role: "recipient",
       phone: "+91-9876543233",
@@ -328,7 +329,7 @@ const mockData = {
     },
     {
       email: "suresh.reddy@email.com",
-      password: "hashedPassword123",
+      password: "RecipientPass123",
       name: "Suresh Reddy",
       role: "recipient",
       phone: "+91-9876543234",

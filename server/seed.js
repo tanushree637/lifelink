@@ -8,7 +8,6 @@
  */
 
 require("dotenv").config();
-const bcrypt = require("bcryptjs");
 const { initializeFirebase, getDB } = require("./config/firebase");
 const mockData = require("./mockData");
 
@@ -36,10 +35,9 @@ async function seedDatabase() {
 
     for (const hospital of mockData.hospitals) {
       try {
-        const hashedPassword = await bcrypt.hash(hospital.password, 10);
+        // Store password as plain text (no hashing)
         const hospitalData = {
           ...hospital,
-          password: hashedPassword,
         };
 
         const docRef = await db.collection("users").add(hospitalData);
@@ -62,10 +60,9 @@ async function seedDatabase() {
 
     for (const donor of mockData.donors) {
       try {
-        const hashedPassword = await bcrypt.hash(donor.password, 10);
+        // Store password as plain text (no hashing)
         const donorData = {
           ...donor,
-          password: hashedPassword,
         };
 
         const docRef = await db.collection("users").add(donorData);
@@ -87,10 +84,9 @@ async function seedDatabase() {
 
     for (const recipient of mockData.recipients) {
       try {
-        const hashedPassword = await bcrypt.hash(recipient.password, 10);
+        // Store password as plain text (no hashing)
         const recipientData = {
           ...recipient,
-          password: hashedPassword,
         };
 
         const docRef = await db.collection("users").add(recipientData);
