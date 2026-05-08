@@ -136,6 +136,11 @@ export const adminAPI = {
   rejectRequest: (requestId, reason) =>
     apiClient.put(`/admin/blood-request/${requestId}/reject`, { reason }),
   getSystemAlerts: () => apiClient.get("/admin/system-alerts"),
+  // New endpoints for complete data sync
+  getAllDonations: () => apiClient.get("/admin/all-donations"),
+  getAllRequestsDetailed: () => apiClient.get("/admin/all-requests-detailed"),
+  getDonorStats: () => apiClient.get("/admin/donor-stats"),
+  getHospitalStats: () => apiClient.get("/admin/hospital-stats"),
 };
 
 export default apiClient;

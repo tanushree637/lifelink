@@ -247,6 +247,26 @@ const RecipientDashboard = () => {
                   <h2>Welcome, Recipient!</h2>
                   <p>You have {activeCount} active blood request(s) pending.</p>
                 </div>
+                <button
+                  className="refresh-btn"
+                  onClick={async () => {
+                    console.log("🔄 Refreshing recipient dashboard...");
+                    await Promise.all([fetchRequests(), fetchHospitals()]);
+                  }}
+                  disabled={loading}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    marginLeft: "1rem",
+                    background: loading ? "#ccc" : "#2b8cff",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "0.25rem",
+                    cursor: loading ? "not-allowed" : "pointer",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  {loading ? "⏳ Refreshing..." : "🔄 Refresh"}
+                </button>
               </div>
             </div>
 

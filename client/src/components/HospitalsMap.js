@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMap,
+  Polyline,
+  Tooltip,
+} from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { donorAPI } from "../utils/api";
@@ -14,13 +22,14 @@ L.Icon.Default.mergeOptions({
   shadowUrl: require("leaflet/dist/images/marker-shadow.png"),
 });
 
-// Hospital marker icon
+// Hospital marker icon - Pin Drop style with medical symbol
 const hospitalIcon = L.icon({
   iconUrl:
-    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23DC2626' width='32' height='32'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9h-2.5v2.5h-2v-2.5H8v-2h2.5V8h2v2.5h2.5v2z'/%3E%3C/svg%3E",
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -32],
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32' fill='%23DC2626' width='40' height='40'%3E%3Cpath d='M12 0C6.48 0 2 4.48 2 10c0 7 10 22 10 22s10-15 10-22c0-5.52-4.48-10-10-10zm0 14c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z'/%3E%3C/svg%3E",
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -40],
+  className: "hospital-pin-marker",
 });
 
 // Emergency request marker icon (orange/warning color)
@@ -183,6 +192,7 @@ const HospitalsMap = ({
   }, [hospitalsList, hasFetched]);
 
   // Process emergency requests with hospital information from props
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     console.log("🔄 Processing emergency requests...");
     console.log("   emergencyRequests length:", emergencyRequests.length);
@@ -211,7 +221,7 @@ const HospitalsMap = ({
       console.log("ℹ️ No requests or hospitals to process");
       setRequestsWithHospitalInfo([]);
     }
-  }, [emergencyRequests, hospitals]); // Include full arrays for proper dependency tracking
+  }, [emergencyRequests, hospitals]);
   // Update showEmergencyRequests when requests change
   useEffect(() => {
     if (requestsWithHospitalInfo.length > 0) {
@@ -324,6 +334,9 @@ const HospitalsMap = ({
         <p className="map-subtitle">
           Hospitals with verified blood requests matching your blood group
         </p>
+        <p className="distance-filter-info">
+          📍 Showing hospitals within 30 km radius from your location
+        </p>
 
         {/* Geocoding Search Bar */}
         <form onSubmit={handleGeocodeSearch} className="geocode-search-form">
@@ -405,14 +418,85 @@ const HospitalsMap = ({
               </Popup>
             </Marker>
 
-            {/* Hospital Markers */}
+            {/* Dotted Lines from Donor to Hospitals within 30km */}
             {hospitals
-              .filter(
-                (h) =>
-                  h.latitude &&
-                  h.longitude &&
-                  (h.latitude !== 0 || h.longitude !== 0),
-              )
+              .filter((h) => {
+                if (
+                  !h.latitude ||
+                  !h.longitude ||
+                  (h.latitude === 0 && h.longitude === 0)
+                ) {
+                  return false;
+                }
+                const distance = parseFloat(
+                  calculateDistance(
+                    center[0],
+                    center[1],
+                    h.latitude,
+                    h.longitude,
+                  ),
+                );
+                return distance <= 30;
+              })
+              .map((hospital) => {
+                const distance = calculateDistance(
+                  center[0],
+                  center[1],
+                  hospital.latitude,
+                  hospital.longitude,
+                );
+                const midLat = (center[0] + hospital.latitude) / 2;
+                const midLon = (center[1] + hospital.longitude) / 2;
+
+                return (
+                  <Polyline
+                    key={`line-${hospital.id}`}
+                    positions={[
+                      center,
+                      [hospital.latitude, hospital.longitude],
+                    ]}
+                    pathOptions={{
+                      color: "#6B7280",
+                      dashArray: "5, 5",
+                      weight: 2,
+                      opacity: 0.6,
+                    }}
+                  >
+                    <Tooltip
+                      permanent={true}
+                      position={[midLat, midLon]}
+                      direction="top"
+                      offset={[-16, -10]}
+                      className="distance-tooltip"
+                    >
+                      {distance} km
+                    </Tooltip>
+                  </Polyline>
+                );
+              })}
+
+            {/* Hospital Markers - Show only hospitals within 30 km radius */}
+            {hospitals
+              .filter((h) => {
+                // Check if hospital has valid coordinates
+                if (
+                  !h.latitude ||
+                  !h.longitude ||
+                  (h.latitude === 0 && h.longitude === 0)
+                ) {
+                  return false;
+                }
+                // Check if hospital is within 30 km radius from donor location
+                const distance = parseFloat(
+                  calculateDistance(
+                    center[0],
+                    center[1],
+                    h.latitude,
+                    h.longitude,
+                  ),
+                );
+                return distance <= 30;
+              })
               .map((hospital) => (
                 <Marker
                   key={hospital.id}
@@ -426,6 +510,16 @@ const HospitalsMap = ({
                     <div className="marker-popup">
                       <h3>{hospital.name}</h3>
                       <p className="location-info">📍 {hospital.location}</p>
+                      <p className="distance-info">
+                        📏 Distance:{" "}
+                        {calculateDistance(
+                          center[0],
+                          center[1],
+                          hospital.latitude,
+                          hospital.longitude,
+                        )}{" "}
+                        km
+                      </p>
                       <p className="contact-info">📞 {hospital.contact}</p>
                       <p className="requests-count">
                         🩸 {hospital.requests?.length || 0} active request
@@ -436,15 +530,29 @@ const HospitalsMap = ({
                 </Marker>
               ))}
 
-            {/* Emergency Request Markers */}
+            {/* Emergency Request Markers - Show only within 30 km radius */}
             {showEmergencyRequests &&
               requestsWithHospitalInfo
-                .filter(
-                  (r) =>
-                    r.latitude &&
-                    r.longitude &&
-                    (r.latitude !== 0 || r.longitude !== 0),
-                )
+                .filter((r) => {
+                  // Check if request has valid coordinates
+                  if (
+                    !r.latitude ||
+                    !r.longitude ||
+                    (r.latitude === 0 && r.longitude === 0)
+                  ) {
+                    return false;
+                  }
+                  // Check if request is within 30 km radius from donor location
+                  const distance = parseFloat(
+                    calculateDistance(
+                      center[0],
+                      center[1],
+                      r.latitude,
+                      r.longitude,
+                    ),
+                  );
+                  return distance <= 30;
+                })
                 .map((request, idx) => (
                   <Marker
                     key={`emergency-${idx}`}
@@ -462,6 +570,16 @@ const HospitalsMap = ({
                       <div className="marker-popup emergency">
                         <h3>🚨 {request.hospitalName}</h3>
                         <p className="location-info">📍 {request.location}</p>
+                        <p className="distance-info">
+                          📏 Distance:{" "}
+                          {calculateDistance(
+                            center[0],
+                            center[1],
+                            request.latitude,
+                            request.longitude,
+                          )}{" "}
+                          km
+                        </p>
                         <p className="patient-info">
                           👤 Patient: {request.patientName}
                         </p>
@@ -547,180 +665,224 @@ const HospitalsMap = ({
             </div>
           ) : (
             <div className="hospitals-items">
-              {/* Display Emergency Requests */}
+              {/* Display Emergency Requests - Filter by 30 km radius */}
               {showEmergencyRequests &&
-                requestsWithHospitalInfo.map((request, idx) => {
+                requestsWithHospitalInfo
+                  .filter((r) => {
+                    if (
+                      !r.latitude ||
+                      !r.longitude ||
+                      (r.latitude === 0 && r.longitude === 0)
+                    ) {
+                      return false;
+                    }
+                    const distance = parseFloat(
+                      calculateDistance(
+                        center[0],
+                        center[1],
+                        r.latitude,
+                        r.longitude,
+                      ),
+                    );
+                    return distance <= 30;
+                  })
+                  .map((request, idx) => {
+                    const distance =
+                      request.latitude && request.longitude
+                        ? calculateDistance(
+                            center[0],
+                            center[1],
+                            request.latitude,
+                            request.longitude,
+                          )
+                        : null;
+
+                    return (
+                      <div
+                        key={`emergency-${idx}`}
+                        className={`hospital-item emergency-request-item ${
+                          selectedHospital?.isEmergencyRequest &&
+                          selectedHospital?.id === request.id
+                            ? "selected"
+                            : ""
+                        }`}
+                        onClick={() =>
+                          setSelectedHospital({
+                            ...request,
+                            isEmergencyRequest: true,
+                          })
+                        }
+                      >
+                        <div className="hospital-item-header">
+                          <h4>🚨 {request.hospitalName}</h4>
+                          <span className="emergency-badge">Emergency</span>
+                        </div>
+
+                        <div className="hospital-item-details">
+                          <p className="hospital-location">
+                            📍 {request.location}
+                          </p>
+                          {distance && (
+                            <p className="distance-info">
+                              📏 {distance} km away
+                            </p>
+                          )}
+                          <p className="patient-info">
+                            👤 Patient: {request.patientName}
+                          </p>
+                        </div>
+
+                        {selectedHospital?.isEmergencyRequest &&
+                          selectedHospital?.id === request.id && (
+                            <div className="hospital-expanded">
+                              <h5>🩸 Blood Request Details:</h5>
+                              <div className="request-item">
+                                <div className="request-header">
+                                  <strong>{request.patientName}</strong>
+                                  <span
+                                    className={`urgency-badge ${request.urgencyLevel?.toLowerCase()}`}
+                                  >
+                                    {request.urgencyLevel}
+                                  </span>
+                                </div>
+                                <div className="request-details">
+                                  <p>
+                                    <strong>Blood Group:</strong>{" "}
+                                    {request.bloodGroup}
+                                  </p>
+                                  <p>
+                                    <strong>Quantity:</strong>{" "}
+                                    {request.quantity} unit
+                                    {request.quantity > 1 ? "s" : ""}
+                                  </p>
+                                  <p>
+                                    <strong>Hospital:</strong>{" "}
+                                    {request.hospitalName}
+                                  </p>
+                                  <p>
+                                    <strong>Location:</strong>{" "}
+                                    {request.location}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                      </div>
+                    );
+                  })}
+
+              {/* Display Regular Hospitals - Filter by 30 km radius */}
+              {hospitals
+                .filter((h) => {
+                  if (
+                    !h.latitude ||
+                    !h.longitude ||
+                    (h.latitude === 0 && h.longitude === 0)
+                  ) {
+                    return false;
+                  }
+                  const distance = parseFloat(
+                    calculateDistance(
+                      center[0],
+                      center[1],
+                      h.latitude,
+                      h.longitude,
+                    ),
+                  );
+                  return distance <= 30;
+                })
+                .map((hospital) => {
                   const distance =
-                    request.latitude && request.longitude
+                    hospital.latitude && hospital.longitude
                       ? calculateDistance(
                           center[0],
                           center[1],
-                          request.latitude,
-                          request.longitude,
+                          hospital.latitude,
+                          hospital.longitude,
                         )
                       : null;
 
                   return (
                     <div
-                      key={`emergency-${idx}`}
-                      className={`hospital-item emergency-request-item ${
-                        selectedHospital?.isEmergencyRequest &&
-                        selectedHospital?.id === request.id
+                      key={hospital.id}
+                      className={`hospital-item ${
+                        selectedHospital?.id === hospital.id &&
+                        !selectedHospital?.isEmergencyRequest
                           ? "selected"
                           : ""
                       }`}
                       onClick={() =>
                         setSelectedHospital({
-                          ...request,
-                          isEmergencyRequest: true,
+                          ...hospital,
+                          isEmergencyRequest: false,
                         })
                       }
                     >
                       <div className="hospital-item-header">
-                        <h4>🚨 {request.hospitalName}</h4>
-                        <span className="emergency-badge">Emergency</span>
+                        <h4>{hospital.name}</h4>
+                        <span className="hospital-requests-badge">
+                          {hospital.requests?.length || 0}
+                        </span>
                       </div>
 
                       <div className="hospital-item-details">
                         <p className="hospital-location">
-                          📍 {request.location}
+                          📍 {hospital.location}
                         </p>
                         {distance && (
                           <p className="distance-info">📏 {distance} km away</p>
                         )}
-                        <p className="patient-info">
-                          👤 Patient: {request.patientName}
-                        </p>
+                        {hospital.contact && (
+                          <p className="hospital-contact">
+                            📞 {hospital.contact}
+                          </p>
+                        )}
+                        {hospital.email && (
+                          <p className="hospital-email">📧 {hospital.email}</p>
+                        )}
                       </div>
 
-                      {selectedHospital?.isEmergencyRequest &&
-                        selectedHospital?.id === request.id && (
+                      {selectedHospital?.id === hospital.id &&
+                        !selectedHospital?.isEmergencyRequest && (
                           <div className="hospital-expanded">
-                            <h5>🩸 Blood Request Details:</h5>
-                            <div className="request-item">
-                              <div className="request-header">
-                                <strong>{request.patientName}</strong>
-                                <span
-                                  className={`urgency-badge ${request.urgencyLevel?.toLowerCase()}`}
+                            <h5>Active Blood Requests:</h5>
+                            <div className="hospital-requests">
+                              {hospital.requests &&
+                              hospital.requests.length > 0 ? (
+                                hospital.requests.map((req, idx) => (
+                                  <div key={idx} className="request-item">
+                                    <div className="request-header">
+                                      <strong>{req.patientName}</strong>
+                                      <span
+                                        className={`urgency-badge ${req.urgencyLevel?.toLowerCase()}`}
+                                      >
+                                        {req.urgencyLevel}
+                                      </span>
+                                    </div>
+                                    <div className="request-details">
+                                      <span className="request-blood">
+                                        🩸 {req.bloodGroup}
+                                      </span>
+                                      <span className="request-quantity">
+                                        Qty: {req.quantity} unit
+                                        {req.quantity > 1 ? "s" : ""}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))
+                              ) : (
+                                <p
+                                  style={{ fontSize: "12px", color: "#9ca3af" }}
                                 >
-                                  {request.urgencyLevel}
-                                </span>
-                              </div>
-                              <div className="request-details">
-                                <p>
-                                  <strong>Blood Group:</strong>{" "}
-                                  {request.bloodGroup}
+                                  No active blood requests for this hospital
                                 </p>
-                                <p>
-                                  <strong>Quantity:</strong> {request.quantity}{" "}
-                                  unit{request.quantity > 1 ? "s" : ""}
-                                </p>
-                                <p>
-                                  <strong>Hospital:</strong>{" "}
-                                  {request.hospitalName}
-                                </p>
-                                <p>
-                                  <strong>Location:</strong> {request.location}
-                                </p>
-                              </div>
+                              )}
                             </div>
                           </div>
                         )}
                     </div>
                   );
                 })}
-
-              {/* Display Regular Hospitals */}
-              {hospitals.map((hospital) => {
-                const distance =
-                  hospital.latitude && hospital.longitude
-                    ? calculateDistance(
-                        center[0],
-                        center[1],
-                        hospital.latitude,
-                        hospital.longitude,
-                      )
-                    : null;
-
-                return (
-                  <div
-                    key={hospital.id}
-                    className={`hospital-item ${
-                      selectedHospital?.id === hospital.id &&
-                      !selectedHospital?.isEmergencyRequest
-                        ? "selected"
-                        : ""
-                    }`}
-                    onClick={() =>
-                      setSelectedHospital({
-                        ...hospital,
-                        isEmergencyRequest: false,
-                      })
-                    }
-                  >
-                    <div className="hospital-item-header">
-                      <h4>{hospital.name}</h4>
-                      <span className="hospital-requests-badge">
-                        {hospital.requests?.length || 0}
-                      </span>
-                    </div>
-
-                    <div className="hospital-item-details">
-                      <p className="hospital-location">
-                        📍 {hospital.location}
-                      </p>
-                      {distance && (
-                        <p className="distance-info">📏 {distance} km away</p>
-                      )}
-                      {hospital.contact && (
-                        <p className="hospital-contact">
-                          📞 {hospital.contact}
-                        </p>
-                      )}
-                      {hospital.email && (
-                        <p className="hospital-email">📧 {hospital.email}</p>
-                      )}
-                    </div>
-
-                    {selectedHospital?.id === hospital.id &&
-                      !selectedHospital?.isEmergencyRequest && (
-                        <div className="hospital-expanded">
-                          <h5>Active Blood Requests:</h5>
-                          <div className="hospital-requests">
-                            {hospital.requests &&
-                            hospital.requests.length > 0 ? (
-                              hospital.requests.map((req, idx) => (
-                                <div key={idx} className="request-item">
-                                  <div className="request-header">
-                                    <strong>{req.patientName}</strong>
-                                    <span
-                                      className={`urgency-badge ${req.urgencyLevel?.toLowerCase()}`}
-                                    >
-                                      {req.urgencyLevel}
-                                    </span>
-                                  </div>
-                                  <div className="request-details">
-                                    <span className="request-blood">
-                                      🩸 {req.bloodGroup}
-                                    </span>
-                                    <span className="request-quantity">
-                                      Qty: {req.quantity} unit
-                                      {req.quantity > 1 ? "s" : ""}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))
-                            ) : (
-                              <p style={{ fontSize: "12px", color: "#9ca3af" }}>
-                                No active blood requests for this hospital
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                  </div>
-                );
-              })}
             </div>
           )}
         </div>

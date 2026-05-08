@@ -326,6 +326,31 @@ const DonorDashboard = () => {
               opportunities.
             </p>
           </div>
+          <button
+            className="refresh-btn"
+            onClick={async () => {
+              console.log("🔄 Refreshing donor dashboard...");
+              await Promise.all([
+                fetchProfile(),
+                handleViewRequests(),
+                handleViewHistory(),
+                fetchCertificates(),
+              ]);
+            }}
+            disabled={loading}
+            style={{
+              padding: "0.5rem 1rem",
+              marginLeft: "1rem",
+              background: loading ? "#ccc" : "#2b8cff",
+              color: "white",
+              border: "none",
+              borderRadius: "0.25rem",
+              cursor: loading ? "not-allowed" : "pointer",
+              fontSize: "0.9rem",
+            }}
+          >
+            {loading ? "⏳ Refreshing..." : "🔄 Refresh"}
+          </button>
         </div>
       </div>
 

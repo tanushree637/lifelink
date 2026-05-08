@@ -47,10 +47,10 @@ router.get("/list", async (req, res) => {
       hospitals.push({
         id: doc.id,
         name: data.hospitalName || "Unknown Hospital",
-        location: data.location || "Unknown Location",
+        location: data.city || data.location || "Unknown Location",
+        address: data.address || data.location || "Not Available",
         phone: data.phone || "N/A",
         email: data.email || "N/A",
-        address: data.address || data.location,
       });
     });
 
@@ -518,7 +518,12 @@ router.get(
   verifyRole(["hospital"]),
   async (req, res) => {
     try {
+      console.log(
+        "📜 Fetching donation history for hospital:",
+        req.user.userId,
+      );
       const db = getDB();
+
       const donationsSnapshot = await db
         .collection("donations")
         .where("hospitalId", "==", req.user.userId)
@@ -530,11 +535,53 @@ router.get(
         donations.push({ id: doc.id, ...doc.data() });
       });
 
+      console.log(
+        "✅ Donation history fetched successfully. Count:",
+        donations.length,
+      );
       res.json(donations);
     } catch (error) {
-      res
-        .status(500)
-        .json({ message: "Error fetching history", error: error.message });
+      console.error("❌ Error fetching donation history:", error);
+
+      // If it's an index error, try without ordering
+      if (error.message.includes("index")) {
+        console.log("📋 Attempting fallback query without orderBy...");
+        try {
+          const db = getDB();
+          const donationsSnapshot = await db
+            .collection("donations")
+            .where("hospitalId", "==", req.user.userId)
+            .get();
+
+          const donations = [];
+          donationsSnapshot.forEach((doc) => {
+            donations.push({ id: doc.id, ...doc.data() });
+          });
+
+          // Sort manually in JavaScript
+          donations.sort(
+            (a, b) =>
+              (b.createdAt?.getTime?.() || 0) - (a.createdAt?.getTime?.() || 0),
+          );
+
+          console.log(
+            "✅ Donation history fetched with fallback. Count:",
+            donations.length,
+          );
+          return res.json(donations);
+        } catch (fallbackError) {
+          console.error("❌ Fallback query also failed:", fallbackError);
+          return res.status(500).json({
+            message: "Error fetching history",
+            error: fallbackError.message,
+          });
+        }
+      }
+
+      res.status(500).json({
+        message: "Error fetching history",
+        error: error.message,
+      });
     }
   },
 );
@@ -609,7 +656,7 @@ router.get("/with-coordinates", async (req, res) => {
       hospitals.push({
         id: doc.id,
         name: data.hospitalName || "Unknown Hospital",
-        location: data.location || data.address || "Unknown Location",
+        location: data.city || data.location || "Unknown Location",
         address: data.address || data.location,
         phone: data.phone || data.contact || "N/A",
         email: data.email || "N/A",

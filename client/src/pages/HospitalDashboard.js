@@ -20,6 +20,7 @@ const HospitalDashboard = () => {
   });
   const [activeTab, setActiveTab] = useState("patient-verification");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [requestActionLoadingId, setRequestActionLoadingId] = useState(null);
   const [verifyingId, setVerifyingId] = useState(null);
   const [otp, setOtp] = useState("");
@@ -89,12 +90,31 @@ const HospitalDashboard = () => {
 
   const handleViewHistory = async () => {
     setLoading(true);
+    setError(null);
     try {
+      console.log("📜 Fetching donation history...");
       const response = await hospitalAPI.getDonationHistory();
-      setHistory(response.data);
+      console.log("✅ Donation history response:", response);
+      console.log("📊 History data:", response.data);
+
+      if (response.data && Array.isArray(response.data)) {
+        setHistory(response.data);
+      } else {
+        setHistory([]);
+      }
       setActiveTab("history");
     } catch (error) {
-      console.error("Error fetching history:", error);
+      console.error("❌ Error fetching history:", error);
+      console.error("Response status:", error.response?.status);
+      console.error("Response data:", error.response?.data);
+
+      const errorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to load donation history";
+      setError(errorMessage);
+      alert("❌ Error: " + errorMessage);
     } finally {
       setLoading(false);
     }
@@ -229,6 +249,30 @@ const HospitalDashboard = () => {
                   <h2>{profile.hospitalName}</h2>
                   <p className="hospital-name">Hospital Dashboard</p>
                 </div>
+                <button
+                  className="refresh-btn"
+                  onClick={async () => {
+                    console.log("🔄 Refreshing hospital dashboard...");
+                    await Promise.all([
+                      fetchProfile(),
+                      handleViewPatientVerificationRequests(),
+                      fetchDashboardStatsData(),
+                    ]);
+                  }}
+                  disabled={loading}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    marginLeft: "1rem",
+                    background: loading ? "#ccc" : "#2b8cff",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "0.25rem",
+                    cursor: loading ? "not-allowed" : "pointer",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  {loading ? "⏳ Refreshing..." : "🔄 Refresh"}
+                </button>
               </div>
             </div>
 
@@ -313,7 +357,12 @@ const HospitalDashboard = () => {
                   </h3>
                   {loading ? (
                     <div className="loading-spinner">Loading...</div>
-                  ) : patientRequests.length === 0 ? (
+                  ) : patientRequests.filter(
+                      (request) =>
+                        request.admissionStatus !== "admitted" &&
+                        request.admissionStatus !== "not-found" &&
+                        request.admissionStatus !== "rejected",
+                    ).length === 0 ? (
                     <div className="no-data">
                       No patient verification requests
                     </div>
@@ -351,82 +400,92 @@ const HospitalDashboard = () => {
                       )}
 
                       <div className="patient-requests-grid">
-                        {patientRequests.map((request) => (
-                          <div
-                            key={request.id}
-                            className={`patient-request-card ${selectedRequest?.id === request.id ? "selected" : ""}`}
-                            onClick={() => handleSelectRequest(request)}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                handleSelectRequest(request);
-                              }
-                            }}
-                          >
-                            <div className="card-header">
-                              <span className="donation-id">
-                                📋 Request ID: {request.requestId?.slice(0, 8)}
-                                ...
-                              </span>
-                              <span
-                                className={`status-badge admission-status ${request.admissionStatus || "pending"}`}
-                              >
-                                {request.admissionStatus || "pending"}
-                              </span>
-                            </div>
-                            <div className="card-body">
-                              <div className="request-details">
-                                <p>
-                                  👤 <strong>Patient Name:</strong>{" "}
-                                  {request.patientName}
-                                </p>
-                                <p>
-                                  🩸 <strong>Blood Group Required:</strong>{" "}
-                                  {request.bloodGroup}
-                                </p>
-                                <p>
-                                  🏥 <strong>Hospital:</strong>{" "}
-                                  {request.hospitalName}
-                                </p>
-                                <p>
-                                  🆔 <strong>Request ID:</strong>{" "}
-                                  {request.requestId}
-                                </p>
-                                <p>
-                                  ✅ <strong>Admission Status:</strong>{" "}
+                        {patientRequests
+                          .filter(
+                            (request) =>
+                              request.admissionStatus !== "admitted" &&
+                              request.admissionStatus !== "not-found" &&
+                              request.admissionStatus !== "rejected",
+                          )
+                          .map((request) => (
+                            <div
+                              key={request.id}
+                              className={`patient-request-card ${selectedRequest?.id === request.id ? "selected" : ""}`}
+                              onClick={() => handleSelectRequest(request)}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  handleSelectRequest(request);
+                                }
+                              }}
+                            >
+                              <div className="card-header">
+                                <span className="donation-id">
+                                  📋 Request ID:{" "}
+                                  {request.requestId?.slice(0, 8)}
+                                  ...
+                                </span>
+                                <span
+                                  className={`status-badge admission-status ${request.admissionStatus || "pending"}`}
+                                >
                                   {request.admissionStatus || "pending"}
-                                </p>
+                                </span>
                               </div>
-                              <div className="button-group patient-actions">
-                                <button
-                                  className="btn-primary"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleConfirmAdmitted(request.requestId);
-                                  }}
-                                  disabled={
-                                    requestActionLoadingId === request.requestId
-                                  }
-                                >
-                                  ✅ Confirm Admitted
-                                </button>
-                                <button
-                                  className="btn-danger"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRejectNotFound(request.requestId);
-                                  }}
-                                  disabled={
-                                    requestActionLoadingId === request.requestId
-                                  }
-                                >
-                                  ❌ Reject (Not Found)
-                                </button>
+                              <div className="card-body">
+                                <div className="request-details">
+                                  <p>
+                                    👤 <strong>Patient Name:</strong>{" "}
+                                    {request.patientName}
+                                  </p>
+                                  <p>
+                                    🩸 <strong>Blood Group Required:</strong>{" "}
+                                    {request.bloodGroup}
+                                  </p>
+                                  <p>
+                                    🏥 <strong>Hospital:</strong>{" "}
+                                    {request.hospitalName}
+                                  </p>
+                                  <p>
+                                    🆔 <strong>Request ID:</strong>{" "}
+                                    {request.requestId}
+                                  </p>
+                                  <p>
+                                    ✅ <strong>Admission Status:</strong>{" "}
+                                    {request.admissionStatus || "pending"}
+                                  </p>
+                                </div>
+                                <div className="button-group patient-actions">
+                                  <button
+                                    className="btn-primary"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleConfirmAdmitted(request.requestId);
+                                    }}
+                                    disabled={
+                                      requestActionLoadingId ===
+                                      request.requestId
+                                    }
+                                  >
+                                    ✅ Confirm Admitted
+                                  </button>
+                                  <button
+                                    className="btn-danger"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRejectNotFound(request.requestId);
+                                    }}
+                                    disabled={
+                                      requestActionLoadingId ===
+                                      request.requestId
+                                    }
+                                  >
+                                    ❌ Reject (Not Found)
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
                       </div>
                     </>
                   )}
@@ -514,60 +573,131 @@ const HospitalDashboard = () => {
               {activeTab === "history" && (
                 <div className="content-section">
                   <h3 className="section-title">Donation History</h3>
+                  {error && (
+                    <div
+                      className="error-banner"
+                      style={{ marginBottom: "16px" }}
+                    >
+                      <p style={{ margin: 0, color: "#dc2626" }}>⚠️ {error}</p>
+                    </div>
+                  )}
                   {loading ? (
                     <div className="loading-spinner">Loading...</div>
                   ) : history.length === 0 ? (
                     <div className="no-data">No donation history</div>
                   ) : (
-                    <div className="history-grid">
-                      {history.map((donation) => (
-                        <div key={donation.id} className="history-card">
-                          <div className="history-header">
-                            <span className="history-id">
-                              📋 {donation.id.slice(0, 8)}...
-                            </span>
-                            <span className={`status-badge ${donation.status}`}>
-                              {donation.status}
-                            </span>
-                          </div>
-                          <div className="history-details">
-                            <p>
-                              👤 <strong>Donor:</strong> {donation.donorId}
-                            </p>
-                            {donation.bloodGroup && (
-                              <p>
-                                🩸 <strong>Blood Group:</strong>{" "}
-                                {donation.bloodGroup}
-                              </p>
-                            )}
-                            <p>
-                              📅 <strong>Date:</strong>{" "}
-                              {donation.createdAt?.seconds
-                                ? new Date(
+                    <div className="history-table-wrapper">
+                      <table className="history-table">
+                        <thead>
+                          <tr>
+                            <th>📋 Request ID</th>
+                            <th>👤 Donor ID</th>
+                            <th>🩸 Blood Group</th>
+                            <th>📅 Date</th>
+                            <th>⚡ Urgency</th>
+                            <th>✅ Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {history.map((donation, index) => {
+                            // Format the date properly handling different formats
+                            let formattedDate = "N/A";
+
+                            // Debug logging for first 3 items
+                            if (index < 3) {
+                              console.log(`Donation ${index}:`, {
+                                id: donation.id,
+                                createdAt: donation.createdAt,
+                                createdAtType: typeof donation.createdAt,
+                                hasSeconds: donation.createdAt?.seconds,
+                                allFields: Object.keys(donation),
+                              });
+                            }
+
+                            if (donation.createdAt) {
+                              try {
+                                let dateObj;
+                                if (donation.createdAt.seconds !== undefined) {
+                                  // Firebase Timestamp format
+                                  console.log(
+                                    "Converting Firebase timestamp:",
+                                    donation.createdAt.seconds,
+                                  );
+                                  dateObj = new Date(
                                     donation.createdAt.seconds * 1000,
-                                  ).toLocaleDateString()
-                                : "N/A"}
-                            </p>
-                          </div>
-                          <div
-                            className="button-group"
-                            style={{ marginTop: "12px" }}
-                          >
-                            <button
-                              className="btn-primary"
-                              onClick={() =>
-                                handleRegenerateCertificate(donation.id)
+                                  );
+                                } else if (
+                                  typeof donation.createdAt === "string"
+                                ) {
+                                  // String format
+                                  console.log(
+                                    "Converting string date:",
+                                    donation.createdAt,
+                                  );
+                                  dateObj = new Date(donation.createdAt);
+                                } else if (donation.createdAt instanceof Date) {
+                                  // Already a Date object
+                                  console.log("Date is already Date object");
+                                  dateObj = donation.createdAt;
+                                } else {
+                                  console.log(
+                                    "Unknown date format:",
+                                    donation.createdAt,
+                                  );
+                                }
+
+                                if (dateObj && !isNaN(dateObj.getTime())) {
+                                  const date = dateObj.toLocaleDateString(
+                                    "en-US",
+                                    {
+                                      year: "numeric",
+                                      month: "short",
+                                      day: "numeric",
+                                    },
+                                  );
+                                  const time = dateObj.toLocaleTimeString(
+                                    "en-US",
+                                    {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    },
+                                  );
+                                  formattedDate = `${date} ${time}`;
+                                }
+                              } catch (err) {
+                                console.error(
+                                  "Error formatting date:",
+                                  err,
+                                  "for createdAt:",
+                                  donation.createdAt,
+                                );
                               }
-                              disabled={regeneratingId === donation.id}
-                              style={{ width: "100%" }}
-                            >
-                              {regeneratingId === donation.id
-                                ? "🔄 Regenerating..."
-                                : "🎨 Update Certificate"}
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                            } else {
+                              console.log(
+                                "No createdAt field for donation:",
+                                donation.id,
+                              );
+                            }
+
+                            return (
+                              <tr key={donation.id}>
+                                <td>{donation.requestId?.slice(0, 8)}...</td>
+                                <td>{donation.donorId?.slice(0, 8)}...</td>
+                                <td>{donation.bloodGroup || "N/A"}</td>
+                                <td>{formattedDate}</td>
+                                <td>{donation.urgencyLevel || "Normal"}</td>
+                                <td>
+                                  <span
+                                    className={`status-badge ${donation.status}`}
+                                  >
+                                    {donation.status}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
                   )}
                 </div>

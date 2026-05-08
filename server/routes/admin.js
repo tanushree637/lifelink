@@ -474,47 +474,82 @@ router.get(
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
 
-      // Get donors
+      // Helper function to safely convert Firestore timestamp to Date
+      const toDate = (timestamp) => {
+        if (!timestamp) return null;
+        if (timestamp.toDate && typeof timestamp.toDate === "function") {
+          return timestamp.toDate();
+        }
+        if (timestamp instanceof Date) {
+          return timestamp;
+        }
+        if (typeof timestamp === "number") {
+          return new Date(timestamp);
+        }
+        try {
+          return new Date(timestamp);
+        } catch {
+          return null;
+        }
+      };
+
+      // Get approved donors with time range filter
       const donorsSnapshot = await db
         .collection("users")
         .where("role", "==", "donor")
         .where("status", "==", "approved")
         .get();
-      const totalDonors = donorsSnapshot.size;
 
-      // Get all donations with dates
+      // Count donors created within time range
+      let totalDonors = 0;
+      donorsSnapshot.forEach((doc) => {
+        const data = doc.data();
+        const createdAt = toDate(data.createdAt);
+        if (createdAt && createdAt >= startDate) {
+          totalDonors++;
+        }
+      });
+
+      // Get all donations with proper date handling
       const donationsSnapshot = await db.collection("donations").get();
       const allDonations = [];
       donationsSnapshot.forEach((doc) => {
         const data = doc.data();
-        allDonations.push({
-          ...data,
-          createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
-        });
+        const createdAt = toDate(data.createdAt);
+        if (createdAt) {
+          allDonations.push({
+            ...data,
+            createdAt: createdAt,
+          });
+        }
       });
 
       // Filter by time range
       const donations = allDonations.filter((d) => d.createdAt >= startDate);
-      const completedDonations = allDonations.filter(
-        (d) => d.status === "completed" && d.createdAt >= startDate,
+      const completedDonations = donations.filter(
+        (d) => d.status === "completed",
       );
       const totalDonations = donations.length;
 
-      // Get all requests with dates
+      // Get all requests with proper date handling
       const requestsSnapshot = await db.collection("emergencyRequests").get();
       const allRequests = [];
       requestsSnapshot.forEach((doc) => {
         const data = doc.data();
-        allRequests.push({
-          ...data,
-          createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
-        });
+        const createdAt = toDate(data.createdAt);
+        if (createdAt) {
+          allRequests.push({
+            ...data,
+            createdAt: createdAt,
+          });
+        }
       });
 
       // Filter by time range
       const requests = allRequests.filter((r) => r.createdAt >= startDate);
+      // Fixed: Changed from "fulfilled" to "completed" to match actual status values
       const fulfilledRequests = requests.filter(
-        (r) => r.status === "fulfilled",
+        (r) => r.status === "completed" || r.status === "fulfilled",
       );
       const totalRequests = requests.length;
 
@@ -523,6 +558,15 @@ router.get(
         totalRequests > 0
           ? Math.round((fulfilledRequests.length / totalRequests) * 100)
           : 0;
+
+      // Debug logging
+      console.log(`📊 Analytics Report (Time Range: ${timeRange} days)`);
+      console.log(`   Total Donors (in range): ${totalDonors}`);
+      console.log(`   Total Donations (in range): ${totalDonations}`);
+      console.log(`   Completed Donations: ${completedDonations.length}`);
+      console.log(`   Total Requests (in range): ${totalRequests}`);
+      console.log(`   Fulfilled Requests: ${fulfilledRequests.length}`);
+      console.log(`   Success Rate: ${successRate}%`);
 
       // Build monthly trend data
       const monthlyData = {};
@@ -563,9 +607,9 @@ router.get(
         }),
       );
 
-      // City-wise distribution (from hospital city data)
+      // City-wise distribution (from hospital city data) - use time-filtered donations
       const cityMap = {};
-      allDonations.forEach((d) => {
+      donations.forEach((d) => {
         if (d.city) {
           cityMap[d.city] = (cityMap[d.city] || 0) + 1;
         }
@@ -1047,6 +1091,242 @@ router.get(
     } catch (error) {
       res.status(500).json({
         message: "Error fetching system alerts",
+        error: error.message,
+      });
+    }
+  },
+);
+
+// Get ALL donations (unfiltered) for admin dashboard
+router.get(
+  "/all-donations",
+  verifyToken,
+  verifyRole(["admin"]),
+  async (req, res) => {
+    try {
+      const db = getDB();
+      const donationsSnapshot = await db
+        .collection("donations")
+        .orderBy("createdAt", "desc")
+        .get();
+
+      const donations = [];
+      for (const doc of donationsSnapshot.docs) {
+        const data = doc.data();
+        // Get donor details
+        let donorName = "Unknown Donor";
+        if (data.donorId) {
+          const donorDoc = await db.collection("users").doc(data.donorId).get();
+          if (donorDoc.exists) {
+            donorName = donorDoc.data().name || "Unknown Donor";
+          }
+        }
+        // Get hospital details
+        let hospitalName = "Unknown Hospital";
+        if (data.hospitalId) {
+          const hospitalDoc = await db
+            .collection("users")
+            .doc(data.hospitalId)
+            .get();
+          if (hospitalDoc.exists) {
+            hospitalName =
+              hospitalDoc.data().hospitalName || "Unknown Hospital";
+          }
+        }
+        donations.push({
+          id: doc.id,
+          ...data,
+          donorName,
+          hospitalName,
+          createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
+        });
+      }
+
+      res.json({
+        count: donations.length,
+        data: donations,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Error fetching all donations",
+        error: error.message,
+      });
+    }
+  },
+);
+
+// Get ALL emergency requests (unfiltered) for admin dashboard
+router.get(
+  "/all-requests-detailed",
+  verifyToken,
+  verifyRole(["admin"]),
+  async (req, res) => {
+    try {
+      const db = getDB();
+      const requestsSnapshot = await db
+        .collection("emergencyRequests")
+        .orderBy("createdAt", "desc")
+        .get();
+
+      const requests = [];
+      for (const doc of requestsSnapshot.docs) {
+        const data = doc.data();
+        // Get recipient details
+        let recipientName = "Unknown Recipient";
+        if (data.recipientId) {
+          const recipientDoc = await db
+            .collection("users")
+            .doc(data.recipientId)
+            .get();
+          if (recipientDoc.exists) {
+            recipientName = recipientDoc.data().name || "Unknown Recipient";
+          }
+        }
+        // Get hospital details
+        let hospitalName = "Unknown Hospital";
+        if (data.hospitalId) {
+          const hospitalDoc = await db
+            .collection("users")
+            .doc(data.hospitalId)
+            .get();
+          if (hospitalDoc.exists) {
+            hospitalName =
+              hospitalDoc.data().hospitalName || "Unknown Hospital";
+          }
+        }
+        requests.push({
+          id: doc.id,
+          ...data,
+          recipientName,
+          hospitalName,
+          createdAt: data.createdAt?.toDate?.() || new Date(data.createdAt),
+        });
+      }
+
+      res.json({
+        count: requests.length,
+        data: requests,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Error fetching all requests",
+        error: error.message,
+      });
+    }
+  },
+);
+
+// Get all donor statistics
+router.get(
+  "/donor-stats",
+  verifyToken,
+  verifyRole(["admin"]),
+  async (req, res) => {
+    try {
+      const db = getDB();
+
+      // Get all approved donors
+      const donorsSnapshot = await db
+        .collection("users")
+        .where("role", "==", "donor")
+        .where("status", "==", "approved")
+        .get();
+
+      const donorStats = [];
+      for (const doc of donorsSnapshot.docs) {
+        const donorData = doc.data();
+
+        // Count donations by this donor
+        const donationsSnapshot = await db
+          .collection("donations")
+          .where("donorId", "==", doc.id)
+          .get();
+
+        donorStats.push({
+          id: doc.id,
+          name: donorData.name || "Unknown",
+          email: donorData.email,
+          bloodGroup: donorData.bloodGroup || "Unknown",
+          location: donorData.location,
+          available: donorData.available,
+          totalDonations: donationsSnapshot.size,
+          completedDonations: donationsSnapshot.docs.filter(
+            (d) => d.data().status === "completed",
+          ).size,
+          lastDonatedAt:
+            donorData.lastDonatedAt?.toDate?.() || donorData.lastDonatedAt,
+          nextAvailableDate:
+            donorData.nextAvailableDate?.toDate?.() ||
+            donorData.nextAvailableDate,
+        });
+      }
+
+      res.json({
+        count: donorStats.length,
+        data: donorStats,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Error fetching donor stats",
+        error: error.message,
+      });
+    }
+  },
+);
+
+// Get all hospital statistics
+router.get(
+  "/hospital-stats",
+  verifyToken,
+  verifyRole(["admin"]),
+  async (req, res) => {
+    try {
+      const db = getDB();
+
+      // Get all approved hospitals
+      const hospitalsSnapshot = await db
+        .collection("users")
+        .where("role", "==", "hospital")
+        .where("status", "==", "approved")
+        .get();
+
+      const hospitalStats = [];
+      for (const doc of hospitalsSnapshot.docs) {
+        const hospitalData = doc.data();
+
+        // Count requests and donations by this hospital
+        const requestsSnapshot = await db
+          .collection("emergencyRequests")
+          .where("hospitalId", "==", doc.id)
+          .get();
+
+        const donationsSnapshot = await db
+          .collection("donations")
+          .where("hospitalId", "==", doc.id)
+          .get();
+
+        hospitalStats.push({
+          id: doc.id,
+          name: hospitalData.hospitalName || "Unknown",
+          email: hospitalData.email,
+          phone: hospitalData.phone,
+          location: hospitalData.location,
+          address: hospitalData.address,
+          totalRequests: requestsSnapshot.size,
+          totalDonations: donationsSnapshot.size,
+          completedDonations: donationsSnapshot.docs.filter(
+            (d) => d.data().status === "completed",
+          ).size,
+        });
+      }
+
+      res.json({
+        count: hospitalStats.length,
+        data: hospitalStats,
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Error fetching hospital stats",
         error: error.message,
       });
     }

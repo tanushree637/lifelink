@@ -4,10 +4,20 @@
  * Database Seeding Script
  * Populates Firebase with mock data for testing
  *
- * Usage: node seed.js
+ * Usage: node server/seed.js or cd server && node seed.js
  */
 
-require("dotenv").config();
+const path = require("path");
+
+// Handle both running from root and from server directory
+const serverDir = __filename.includes("server")
+  ? path.dirname(__filename)
+  : path.join(path.dirname(__filename), "server");
+
+// Change to server directory for proper module resolution
+process.chdir(serverDir);
+
+require("dotenv").config({ path: path.join(serverDir, ".env") });
 const { initializeFirebase, getDB } = require("./config/firebase");
 const mockData = require("./mockData");
 

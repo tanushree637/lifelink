@@ -106,6 +106,26 @@ const AdminDashboard = () => {
             <h2>Welcome, Admin!</h2>
             <p>Here are the latest updates and statistics from the platform.</p>
           </div>
+          <button
+            className="refresh-btn"
+            onClick={() => {
+              console.log("🔄 Refreshing admin dashboard data...");
+              fetchAllAdminData();
+            }}
+            disabled={loading}
+            style={{
+              padding: "0.5rem 1rem",
+              marginLeft: "1rem",
+              background: loading ? "#ccc" : "#2b8cff",
+              color: "white",
+              border: "none",
+              borderRadius: "0.25rem",
+              cursor: loading ? "not-allowed" : "pointer",
+              fontSize: "0.9rem",
+            }}
+          >
+            {loading ? "⏳ Refreshing..." : "🔄 Refresh Data"}
+          </button>
         </div>
       </div>
 
