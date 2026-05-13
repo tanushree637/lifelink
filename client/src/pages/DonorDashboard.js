@@ -652,6 +652,22 @@ const DonorDashboard = () => {
                             ? "1 hour ago"
                             : `${hoursAgo} hours ago`;
 
+                      // Calculate distance if donor has location and hospital has coordinates
+                      let distance = null;
+                      if (
+                        profile?.location &&
+                        request.hospitalLatitude &&
+                        request.hospitalLongitude
+                      ) {
+                        try {
+                          // Try to extract coordinates from donor location (if it's geocoded)
+                          // For now, show a note that distance calculation requires coordinates
+                          distance = "Calculate in map";
+                        } catch (e) {
+                          distance = null;
+                        }
+                      }
+
                       return (
                         <div
                           key={request.id}
@@ -667,11 +683,11 @@ const DonorDashboard = () => {
                               <div className="request-blood">🩸</div>
                               <div className="request-info">
                                 <div className="request-top-row">
-                                  <h4>{request.patientName}</h4>
+                                  <h4>{request.patientName || "Patient"}</h4>
                                   <span
                                     className={`urgency-badge ${request.urgencyLevel?.toLowerCase()}`}
                                   >
-                                    {request.urgencyLevel.toUpperCase()}
+                                    {request.urgencyLevel?.toUpperCase()}
                                   </span>
                                 </div>
                                 <p className="request-blood-type">
@@ -681,8 +697,16 @@ const DonorDashboard = () => {
                                 </p>
                                 <div className="request-details">
                                   <p className="request-hospital">
-                                    🏥 {request.hospitalName || "Hospital"}
+                                    🏥{" "}
+                                    <strong>
+                                      {request.hospitalName || "Hospital"}
+                                    </strong>
                                   </p>
+                                  {request.hospitalLocation && (
+                                    <p className="request-location">
+                                      📍 {request.hospitalLocation}
+                                    </p>
+                                  )}
                                   <p className="request-time">
                                     ⏰ {timeDisplay}
                                   </p>
@@ -960,7 +984,11 @@ const DonorDashboard = () => {
             {/* Hospitals Map */}
             {activeTab === "map" && (
               <div className="card map-card">
-                <HospitalsMap userCity={profile.location} />
+                <HospitalsMap
+                  userCity={profile.location}
+                  emergencyRequests={requests}
+                  donorCoordinates={profile.coordinates || null}
+                />
               </div>
             )}
 

@@ -109,12 +109,14 @@ const HospitalsMap = ({
   emergencyRequests = [],
   hospitalsList = [],
   userCity = null,
+  donorCoordinates = null,
 }) => {
   const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedHospital, setSelectedHospital] = useState(null);
   const [center, setCenter] = useState([51.505, -0.09]); // Default: London
+  const [donorLocation, setDonorLocation] = useState(null); // Store donor's actual location
   const [showEmergencyRequests, setShowEmergencyRequests] = useState(
     emergencyRequests.length > 0,
   );
@@ -123,13 +125,22 @@ const HospitalsMap = ({
   const [searchInput, setSearchInput] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
 
-  // Geocode user's city when component mounts
+  // Use provided donor coordinates or geocode the city
   useEffect(() => {
-    if (userCity && userCity.trim().length > 0) {
+    if (
+      donorCoordinates &&
+      donorCoordinates.latitude &&
+      donorCoordinates.longitude
+    ) {
+      console.log("✅ Using provided donor coordinates:", donorCoordinates);
+      setDonorLocation([donorCoordinates.latitude, donorCoordinates.longitude]);
+      setCenter([donorCoordinates.latitude, donorCoordinates.longitude]);
+    } else if (userCity && userCity.trim().length > 0) {
       console.log("🌍 Geocoding user city:", userCity);
       geocodeAddress(userCity)
         .then((coords) => {
           console.log("✅ User city geocoded:", coords);
+          setDonorLocation([coords.latitude, coords.longitude]);
           setCenter([coords.latitude, coords.longitude]);
         })
         .catch((err) => {
@@ -137,7 +148,7 @@ const HospitalsMap = ({
           // Continue with default center if geocoding fails
         });
     }
-  }, [userCity]);
+  }, [userCity, donorCoordinates]);
 
   useEffect(() => {
     // Only fetch once if no hospitalsList provided
@@ -198,16 +209,32 @@ const HospitalsMap = ({
     console.log("   emergencyRequests length:", emergencyRequests.length);
     console.log("   hospitals length:", hospitals.length);
 
-    if (emergencyRequests.length > 0 && hospitals.length > 0) {
+    if (emergencyRequests.length > 0) {
       const requestsWithInfo = emergencyRequests.map((req) => {
-        const hospital = hospitals.find((h) => h.id === req.hospitalId);
+        // Use coordinates from request if available, otherwise try to find hospital
+        let latitude = req.hospitalLatitude;
+        let longitude = req.hospitalLongitude;
+        let hospitalName = req.hospitalName;
+        let location = req.hospitalLocation;
+
+        // Fallback: find hospital in list if coordinates not in request
+        if ((!latitude || !longitude) && hospitals.length > 0) {
+          const hospital = hospitals.find((h) => h.id === req.hospitalId);
+          latitude = hospital?.latitude || null;
+          longitude = hospital?.longitude || null;
+          hospitalName =
+            hospital?.name || req.hospitalName || "Unknown Hospital";
+          location =
+            hospital?.location || req.hospitalLocation || "Unknown Location";
+        }
+
         return {
           ...req,
           id: req.id || `req-${Math.random()}`,
-          hospitalName: hospital?.name || "Unknown Hospital",
-          location: hospital?.location || "Unknown Location",
-          latitude: hospital?.latitude || null,
-          longitude: hospital?.longitude || null,
+          hospitalName: hospitalName || "Unknown Hospital",
+          location: location || "Unknown Location",
+          latitude: latitude,
+          longitude: longitude,
         };
       });
       setRequestsWithHospitalInfo(requestsWithInfo);
@@ -218,7 +245,7 @@ const HospitalsMap = ({
         requestsWithInfo,
       );
     } else {
-      console.log("ℹ️ No requests or hospitals to process");
+      console.log("ℹ️ No requests to process");
       setRequestsWithHospitalInfo([]);
     }
   }, [emergencyRequests, hospitals]);
@@ -409,71 +436,82 @@ const HospitalsMap = ({
             />
 
             {/* Donor Location Marker */}
-            <Marker position={center} icon={donorIcon} zIndexOffset={1000}>
+            <Marker
+              position={donorLocation || center}
+              icon={donorIcon}
+              zIndexOffset={1000}
+            >
               <Popup>
                 <div className="marker-popup">
                   <h3>📍 Your Location</h3>
                   <p className="location-info">You are here</p>
+                  {donorLocation && (
+                    <p className="coordinates">
+                      {donorLocation[0].toFixed(4)},{" "}
+                      {donorLocation[1].toFixed(4)}
+                    </p>
+                  )}
                 </div>
               </Popup>
             </Marker>
 
             {/* Dotted Lines from Donor to Hospitals within 30km */}
-            {hospitals
-              .filter((h) => {
-                if (
-                  !h.latitude ||
-                  !h.longitude ||
-                  (h.latitude === 0 && h.longitude === 0)
-                ) {
-                  return false;
-                }
-                const distance = parseFloat(
-                  calculateDistance(
-                    center[0],
-                    center[1],
-                    h.latitude,
-                    h.longitude,
-                  ),
-                );
-                return distance <= 30;
-              })
-              .map((hospital) => {
-                const distance = calculateDistance(
-                  center[0],
-                  center[1],
-                  hospital.latitude,
-                  hospital.longitude,
-                );
-                const midLat = (center[0] + hospital.latitude) / 2;
-                const midLon = (center[1] + hospital.longitude) / 2;
+            {donorLocation &&
+              hospitals
+                .filter((h) => {
+                  if (
+                    !h.latitude ||
+                    !h.longitude ||
+                    (h.latitude === 0 && h.longitude === 0)
+                  ) {
+                    return false;
+                  }
+                  const distance = parseFloat(
+                    calculateDistance(
+                      donorLocation[0],
+                      donorLocation[1],
+                      h.latitude,
+                      h.longitude,
+                    ),
+                  );
+                  return distance <= 30;
+                })
+                .map((hospital) => {
+                  const distance = calculateDistance(
+                    donorLocation[0],
+                    donorLocation[1],
+                    hospital.latitude,
+                    hospital.longitude,
+                  );
+                  const midLat = (donorLocation[0] + hospital.latitude) / 2;
+                  const midLon = (donorLocation[1] + hospital.longitude) / 2;
 
-                return (
-                  <Polyline
-                    key={`line-${hospital.id}`}
-                    positions={[
-                      center,
-                      [hospital.latitude, hospital.longitude],
-                    ]}
-                    pathOptions={{
-                      color: "#6B7280",
-                      dashArray: "5, 5",
-                      weight: 2,
-                      opacity: 0.6,
-                    }}
-                  >
-                    <Tooltip
-                      permanent={true}
-                      position={[midLat, midLon]}
-                      direction="top"
-                      offset={[-16, -10]}
-                      className="distance-tooltip"
+                  return (
+                    <Polyline
+                      key={`line-${hospital.id}`}
+                      positions={[
+                        donorLocation,
+                        [hospital.latitude, hospital.longitude],
+                      ]}
+                      pathOptions={{
+                        color: "#6B7280",
+                        dashArray: "5, 5",
+                        weight: 2,
+                        opacity: 0.6,
+                      }}
                     >
-                      {distance} km
-                    </Tooltip>
-                  </Polyline>
-                );
-              })}
+                      <Tooltip
+                        permanent={true}
+                        position={[midLat, midLon]}
+                        direction="top"
+                        offset={[-16, -10]}
+                        className="distance-tooltip"
+                      >
+                        {distance} km
+                      </Tooltip>
+                    </Polyline>
+                  );
+                })}
 
             {/* Hospital Markers - Show only hospitals within 30 km radius */}
             {hospitals
@@ -486,49 +524,50 @@ const HospitalsMap = ({
                 ) {
                   return false;
                 }
-                // Check if hospital is within 30 km radius from donor location
+                // Use donor location for distance calculation if available
+                const refLat = donorLocation ? donorLocation[0] : center[0];
+                const refLon = donorLocation ? donorLocation[1] : center[1];
                 const distance = parseFloat(
-                  calculateDistance(
-                    center[0],
-                    center[1],
-                    h.latitude,
-                    h.longitude,
-                  ),
+                  calculateDistance(refLat, refLon, h.latitude, h.longitude),
                 );
                 return distance <= 30;
               })
-              .map((hospital) => (
-                <Marker
-                  key={hospital.id}
-                  position={[hospital.latitude, hospital.longitude]}
-                  icon={hospitalIcon}
-                  eventHandlers={{
-                    click: () => setSelectedHospital(hospital),
-                  }}
-                >
-                  <Popup>
-                    <div className="marker-popup">
-                      <h3>{hospital.name}</h3>
-                      <p className="location-info">📍 {hospital.location}</p>
-                      <p className="distance-info">
-                        📏 Distance:{" "}
-                        {calculateDistance(
-                          center[0],
-                          center[1],
-                          hospital.latitude,
-                          hospital.longitude,
-                        )}{" "}
-                        km
-                      </p>
-                      <p className="contact-info">📞 {hospital.contact}</p>
-                      <p className="requests-count">
-                        🩸 {hospital.requests?.length || 0} active request
-                        {hospital.requests?.length !== 1 ? "s" : ""}
-                      </p>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
+              .map((hospital) => {
+                const refLat = donorLocation ? donorLocation[0] : center[0];
+                const refLon = donorLocation ? donorLocation[1] : center[1];
+                return (
+                  <Marker
+                    key={hospital.id}
+                    position={[hospital.latitude, hospital.longitude]}
+                    icon={hospitalIcon}
+                    eventHandlers={{
+                      click: () => setSelectedHospital(hospital),
+                    }}
+                  >
+                    <Popup>
+                      <div className="marker-popup">
+                        <h3>{hospital.name}</h3>
+                        <p className="location-info">📍 {hospital.location}</p>
+                        <p className="distance-info">
+                          📏 Distance:{" "}
+                          {calculateDistance(
+                            refLat,
+                            refLon,
+                            hospital.latitude,
+                            hospital.longitude,
+                          )}{" "}
+                          km
+                        </p>
+                        <p className="contact-info">📞 {hospital.contact}</p>
+                        <p className="requests-count">
+                          🩸 {hospital.requests?.length || 0} active request
+                          {hospital.requests?.length !== 1 ? "s" : ""}
+                        </p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
 
             {/* Emergency Request Markers - Show only within 30 km radius */}
             {showEmergencyRequests &&
@@ -542,108 +581,115 @@ const HospitalsMap = ({
                   ) {
                     return false;
                   }
-                  // Check if request is within 30 km radius from donor location
+                  // Use donor location for distance calculation if available
+                  const refLat = donorLocation ? donorLocation[0] : center[0];
+                  const refLon = donorLocation ? donorLocation[1] : center[1];
                   const distance = parseFloat(
-                    calculateDistance(
-                      center[0],
-                      center[1],
-                      r.latitude,
-                      r.longitude,
-                    ),
+                    calculateDistance(refLat, refLon, r.latitude, r.longitude),
                   );
                   return distance <= 30;
                 })
-                .map((request, idx) => (
-                  <Marker
-                    key={`emergency-${idx}`}
-                    position={[request.latitude, request.longitude]}
-                    icon={emergencyRequestIcon}
-                    eventHandlers={{
-                      click: () =>
-                        setSelectedHospital({
-                          ...request,
-                          isEmergencyRequest: true,
-                        }),
-                    }}
+                .map((request, idx) => {
+                  const refLat = donorLocation ? donorLocation[0] : center[0];
+                  const refLon = donorLocation ? donorLocation[1] : center[1];
+                  return (
+                    <Marker
+                      key={`emergency-${idx}`}
+                      position={[request.latitude, request.longitude]}
+                      icon={emergencyRequestIcon}
+                      eventHandlers={{
+                        click: () =>
+                          setSelectedHospital({
+                            ...request,
+                            isEmergencyRequest: true,
+                          }),
+                      }}
+                    >
+                      <Popup>
+                        <div className="marker-popup emergency">
+                          <h3>🚨 {request.hospitalName}</h3>
+                          <p className="location-info">📍 {request.location}</p>
+                          <p className="distance-info">
+                            📏 Distance:{" "}
+                            {calculateDistance(
+                              refLat,
+                              refLon,
+                              request.latitude,
+                              request.longitude,
+                            )}{" "}
+                            km
+                          </p>
+                          <p className="patient-info">
+                            👤 Patient: {request.patientName}
+                          </p>
+                          <p className="blood-info">
+                            🩸 Blood Group: {request.bloodGroup}
+                          </p>
+                          <p className="quantity-info">
+                            Qty: {request.quantity} unit
+                            {request.quantity > 1 ? "s" : ""}
+                          </p>
+                          <p className="urgency-info">
+                            ⚡ Priority:{" "}
+                            <span className={request.urgencyLevel}>
+                              {request.urgencyLevel}
+                            </span>
+                          </p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  );
+                })}
+
+            {/* Show overlay message if no coordinates */}
+            {(() => {
+              const hospitalsWithCoords = hospitals.filter(
+                (h) =>
+                  h.latitude &&
+                  h.longitude &&
+                  (h.latitude !== 0 || h.longitude !== 0),
+              );
+              const requestsWithCoords = requestsWithHospitalInfo.filter(
+                (r) =>
+                  r.latitude &&
+                  r.longitude &&
+                  (r.latitude !== 0 || r.longitude !== 0),
+              );
+
+              return hospitalsWithCoords.length === 0 &&
+                requestsWithCoords.length === 0 &&
+                (hospitals.length > 0 ||
+                  requestsWithHospitalInfo.length > 0) ? (
+                <div className="map-no-coordinates">
+                  <p>📍 Map coordinates not available for display</p>
+                  <p style={{ fontSize: "12px", color: "#9ca3af" }}>
+                    Showing {hospitals.length} hospital
+                    {hospitals.length !== 1 ? "s" : ""} and{" "}
+                    {requestsWithHospitalInfo.length} request
+                    {requestsWithHospitalInfo.length !== 1 ? "s" : ""} in the
+                    sidebar
+                  </p>
+                </div>
+              ) : null;
+            })()}
+
+            {/* Empty state overlay */}
+            {hospitals.length === 0 &&
+              requestsWithHospitalInfo.length === 0 &&
+              !loading && (
+                <div className="map-empty">
+                  <p>
+                    📭 No nearby hospitals with blood requests at the moment
+                  </p>
+                  <button
+                    onClick={fetchNearbyHospitals}
+                    className="retry-button"
                   >
-                    <Popup>
-                      <div className="marker-popup emergency">
-                        <h3>🚨 {request.hospitalName}</h3>
-                        <p className="location-info">📍 {request.location}</p>
-                        <p className="distance-info">
-                          📏 Distance:{" "}
-                          {calculateDistance(
-                            center[0],
-                            center[1],
-                            request.latitude,
-                            request.longitude,
-                          )}{" "}
-                          km
-                        </p>
-                        <p className="patient-info">
-                          👤 Patient: {request.patientName}
-                        </p>
-                        <p className="blood-info">
-                          🩸 Blood Group: {request.bloodGroup}
-                        </p>
-                        <p className="quantity-info">
-                          Qty: {request.quantity} unit
-                          {request.quantity > 1 ? "s" : ""}
-                        </p>
-                        <p className="urgency-info">
-                          ⚡ Priority:{" "}
-                          <span className={request.urgencyLevel}>
-                            {request.urgencyLevel}
-                          </span>
-                        </p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
+                    Refresh
+                  </button>
+                </div>
+              )}
           </MapContainer>
-
-          {/* Show overlay message if no coordinates */}
-          {(() => {
-            const hospitalsWithCoords = hospitals.filter(
-              (h) =>
-                h.latitude &&
-                h.longitude &&
-                (h.latitude !== 0 || h.longitude !== 0),
-            );
-            const requestsWithCoords = requestsWithHospitalInfo.filter(
-              (r) =>
-                r.latitude &&
-                r.longitude &&
-                (r.latitude !== 0 || r.longitude !== 0),
-            );
-
-            return hospitalsWithCoords.length === 0 &&
-              requestsWithCoords.length === 0 &&
-              (hospitals.length > 0 || requestsWithHospitalInfo.length > 0) ? (
-              <div className="map-no-coordinates">
-                <p>📍 Map coordinates not available for display</p>
-                <p style={{ fontSize: "12px", color: "#9ca3af" }}>
-                  Showing {hospitals.length} hospital
-                  {hospitals.length !== 1 ? "s" : ""} and{" "}
-                  {requestsWithHospitalInfo.length} request
-                  {requestsWithHospitalInfo.length !== 1 ? "s" : ""} in the
-                  sidebar
-                </p>
-              </div>
-            ) : null;
-          })()}
-
-          {/* Empty state overlay */}
-          {hospitals.length === 0 &&
-            requestsWithHospitalInfo.length === 0 &&
-            !loading && (
-              <div className="map-empty">
-                <p>📭 No nearby hospitals with blood requests at the moment</p>
-                <button onClick={fetchNearbyHospitals} className="retry-button">
-                  Refresh
-                </button>
-              </div>
-            )}
         </div>
 
         {/* Hospital Details Sidebar */}

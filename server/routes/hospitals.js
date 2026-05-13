@@ -51,6 +51,8 @@ router.get("/list", async (req, res) => {
         address: data.address || data.location || "Not Available",
         phone: data.phone || "N/A",
         email: data.email || "N/A",
+        latitude: data.latitude || null,
+        longitude: data.longitude || null,
       });
     });
 

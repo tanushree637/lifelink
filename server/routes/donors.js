@@ -222,30 +222,65 @@ router.get(
       }
 
       const requests = [];
+      const seenRequestIds = new Set(); // Track unique requests to avoid duplicates
+
       for (const doc of requestsSnapshot.docs) {
+        const requestId = doc.id;
+
+        // Skip if we've already processed this request
+        if (seenRequestIds.has(requestId)) {
+          console.log(`⚠️ Skipping duplicate request: ${requestId}`);
+          continue;
+        }
+        seenRequestIds.add(requestId);
+
         const requestData = doc.data();
 
-        // Get hospital details
+        // Get hospital details with coordinates
         let hospitalName = "Unknown Hospital";
         let hospitalLocation = "Unknown Location";
+        let hospitalLatitude = null;
+        let hospitalLongitude = null;
+        let hospitalCity = null;
         if (requestData.hospitalId) {
           const hospitalDoc = await db
             .collection("users")
             .doc(requestData.hospitalId)
             .get();
           if (hospitalDoc.exists) {
-            hospitalName =
-              hospitalDoc.data().hospitalName || "Unknown Hospital";
+            const hospitalData = hospitalDoc.data();
+            hospitalName = hospitalData.hospitalName || "Unknown Hospital";
             hospitalLocation =
-              hospitalDoc.data().location || "Unknown Location";
+              hospitalData.address ||
+              hospitalData.location ||
+              "Unknown Location";
+            hospitalLatitude = hospitalData.latitude || null;
+            hospitalLongitude = hospitalData.longitude || null;
+            hospitalCity = hospitalData.city || "Unknown City";
+          }
+        }
+
+        // Get recipient details for more info
+        let recipientName = "Unknown Patient";
+        if (requestData.recipientId) {
+          const recipientDoc = await db
+            .collection("users")
+            .doc(requestData.recipientId)
+            .get();
+          if (recipientDoc.exists) {
+            recipientName = recipientDoc.data().name || "Unknown Patient";
           }
         }
 
         requests.push({
-          id: doc.id,
+          id: requestId,
           ...requestData,
           hospitalName,
           hospitalLocation,
+          hospitalLatitude,
+          hospitalLongitude,
+          hospitalCity,
+          recipientName,
           createdAt: requestData.createdAt?.toDate?.() || requestData.createdAt,
           updatedAt: requestData.updatedAt?.toDate?.() || requestData.updatedAt,
         });

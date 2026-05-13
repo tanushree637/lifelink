@@ -687,6 +687,16 @@
   font-weight: 500;
 }
 
+.request-location {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #5a6c7d;
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
 .request-time {
   margin: 0;
   display: flex;
